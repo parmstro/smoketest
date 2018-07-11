@@ -1,0 +1,9 @@
+---
+- name: Start system smoke tests
+  hosts: all
+  gather_facts: yes
+  
+  roles:
+    - dns
+    - time
+

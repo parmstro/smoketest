@@ -1,0 +1,27 @@
+---
+# Want to check to make sure that the time is accurate. 
+# We are assuming that the ntp or chronyd services are up and running
+# We will check agains time.parmstrong.ca
+# Use ntpstat for ntpd
+# Use chronyc for chronyd
+
+- name: is chronyd service on 
+  shell: "chronyc tracking"
+  register: chronyc_result
+  
+- set_fact:
+    timecmd: "chronyc activity"
+
+- set_fact:
+    timecmd: "ntpstat"
+  when: "'Cannot talk to daemon' in chronyc_result.stdout"
+
+- name: check if our time synchronizing
+  command: "{{ timecmd }}"
+  register: timecmd_output
+
+- assert: 
+    that: 
+      - "'synchronised' in timecmd_output.stdout or '0 sources online' not in timecmd_output.stdout"
+
+

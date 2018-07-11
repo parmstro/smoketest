@@ -1,0 +1,31 @@
+---
+- name: "What does the system think its hostname is?"
+  command: 'hostname'
+  register: my_hostname
+
+- debug:
+    msg: '{{ my_hostname.stdout }}'
+
+- name: "What does the system think its IP address is based on its name?"
+  shell: "nslookup {{ my_hostname.stdout }} | grep Add | grep -v '#' | awk '{print $2}';"
+  register: my_ip
+
+- debug:
+    msg: '{{ my_ip.stdout }}'
+
+- name: "Can we find the IP address configured on our host?"
+  shell: '/sbin/ip addr | grep "{{ my_ip.stdout }}"'
+  register: ip_output
+  failed_when: ip_output.stdout == ""
+
+- name: "Can we ping our hostname?"
+  command: "/bin/ping -c 4 {{ my_hostname.stdout }}"
+  register: ping_output
+  failed_when: "'Name or service not known' in ip_output.stdout or 'destination host unreachable' in ip_output.stdout"
+
+- name: "Can the system reach the internet?"
+  command: "/bin/ping -c 4 8.8.8.8"
+  register: ping_output
+  failed_when: "'Name or service not known' in ip_output.stdout or 'destination host unreachable' in ip_output.stdout"
+  when: must_reach_internet == True 
+
